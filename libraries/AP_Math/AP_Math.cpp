@@ -72,10 +72,11 @@ float safe_sqrt(const T v)
 {
     float ret = sqrtf(static_cast<float>(v));
     if (isnan(ret)) {
-        return 0;
+        return 0;//如果ret的值是非数字（NaN），则函数会返回0；
     }
     return ret;
-}
+}//该函数的作用是使用sqrtf函数计算参数v的平方根，并将结果赋给变量ret。
+
 
 template float safe_sqrt<int>(const int v);
 template float safe_sqrt<short>(const short v);

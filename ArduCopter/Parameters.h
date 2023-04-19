@@ -380,7 +380,6 @@ public:
         k_param_arming, // 252  - AP_Arming
         k_param_logger = 253, // 253 - Logging Group
 
-        // 254,255: reserved
 
         k_param_vehicle = 257, // vehicle common block of parameters
 
@@ -390,8 +389,6 @@ public:
 
     AP_Int16        format_version;
 
-    // Telemetry control
-    //
     AP_Int16        sysid_this_mav;
     AP_Int16        sysid_my_gcs;
     AP_Int8         telem_delay;
