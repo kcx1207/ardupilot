@@ -1,7 +1,7 @@
 #include "AC_AttitudeControl_Multi.h"
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
-
+#include <GCS_MAVLink/GCS.h>
 
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
@@ -251,6 +251,12 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     _pid_rate_yaw(AC_ATC_MULTI_RATE_YAW_P, AC_ATC_MULTI_RATE_YAW_I, AC_ATC_MULTI_RATE_YAW_D, 0.0f, AC_ATC_MULTI_RATE_YAW_IMAX, AC_ATC_MULTI_RATE_RP_FILT_HZ, AC_ATC_MULTI_RATE_YAW_FILT_HZ, 0.0f)
 {
     AP_Param::setup_object_defaults(this, var_info);
+    z1=0;
+    z2=0;
+    z3=0;
+ _ang_vel_body_last = {0,0,0};
+_control_value_new = {0,0,0};
+  _control_value_old = {0,0,0};
 }
 
 // Update Alt_Hold angle maximum
@@ -382,46 +388,29 @@ void AC_AttitudeControl_Multi::rate_controller_run()
     //这个函数分别对Roll、Pitch和Yaw三个通道进行PID运算。
     //以Roll通道为例，get_rate_roll_pid()返回该通道的PID控制器，
     //然后通过update_all()接收期望和测量角速度计算得到电机控制指令，然后通过set_roll()函数实现电机控制指令的设置。
-  
-    Vector3f control_value_new;
-    Vector3f control_value_old;
-    Vector3f _ang_vel_body_last;
-    float k1=5;float k2=0;float z1=0;float z2=0;float z3=0;float b0=1;float w0=15;
-    // LADRC_controller my_controller;
-    // control_value_new.x= my_controller.LADRC_cal( _ang_vel_body.x,_ang_vel_body_last.x , k1, k2,z1,  z2,  z3, 
-    // b0,  _dt, w0,control_value_old.x, gyro_latest.x); 
-    // _ang_vel_body_last.x=_ang_vel_body.x;
-  
-    // _motors.set_roll(control_value_new.x+ _actuator_sysid.x);
-    // _motors.set_roll_ff(get_rate_roll_pid().get_ff());
+    
 
-    // control_value_new.y= LADRC_controller::LADRC_cal( _ang_vel_body.y,float& _ang_vel_body_last.y ,float k1,float k2,float& z1, float& z2, float& z3, 
-    // float b0, float dt,float w0,float control_value_old.y,float gyro_latest.y); 
-    // control_value_old.y= control_value_new.y;
-    // _motors.set_pitch(control_value_new.y+ _actuator_sysid.y);
-    // _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
 
-    // control_value_new.z= LADRC_controller::LADRC_cal( _ang_vel_body.z,float& _ang_vel_body_last.z ,float k1,float k2,float& z1, float& z2, float& z3, 
-    // float b0, float dt,float w0,float control_value_old.z,float gyro_latest.z); 
-    // control_value_old.z= control_value_new.z;
-    // _motors.set_yaw(control_value_new.z+ _actuator_sysid.z);
-    // _motors.set_yaw_ff(get_rate_yaw_pid().get_ff());
-
-    _motors.set_roll(get_rate_roll_pid().LADRC_cal(_ang_vel_body.x, _ang_vel_body_last.x , k1, k2, z1,  z2,  z3,  b0,  _dt, w0, control_value_old.x, gyro_latest.x));
+    _control_value_new.x = get_rate_roll_pid().LADRC_cal(_ang_vel_body.x, _ang_vel_body_last.x , z1,  z2,  z3,_control_value_old.x, gyro_latest.x,_dt);
+    _motors.set_roll( _control_value_new.x );
     _motors.set_roll_ff(get_rate_roll_pid().get_ff());// get_ff()根据期望角速率计算前馈量
-   control_value_old.x= control_value_new.x;
-
+     _control_value_old.x= _control_value_new.x;
+      _ang_vel_body_last = _ang_vel_body;
+    // Copter Copter;
+    // gcs().send_text(MAV_SEVERITY_CRITICAL,"_ang_vel_body_last.x:%f",_ang_vel_body_last.x);
+    // gcs().send_text(MAV_SEVERITY_CRITICAL,"_control_value_old.x:%f",_control_value_old.x);
     // _motors.set_pitch(get_rate_pitch_pid().LADRC_cal(_ang_vel_body.y, gyro_latest.y,  _dt, _motors.limit.pitch, _pd_scale.y) + _actuator_sysid.y);
     // _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
 
     // _motors.set_yaw(get_rate_yaw_pid().LADRC_cal(_ang_vel_body.z, gyro_latest.z,  _dt, _motors.limit.yaw, _pd_scale.z) + _actuator_sysid.z);
     // _motors.set_yaw_ff(get_rate_yaw_pid().get_ff()*_feedforward_scalar);
 
-    //     _motors.set_roll(get_rate_roll_pid().update_all(_ang_vel_body.x, gyro_latest.x,  _dt, _motors.limit.roll, _pd_scale.x) + _actuator_sysid.x);
+    // _motors.set_roll(get_rate_roll_pid().update_all(_ang_vel_body.x, gyro_latest.x,  _dt, _motors.limit.roll, _pd_scale.x) + _actuator_sysid.x);
     // _motors.set_roll_ff(get_rate_roll_pid().get_ff());// get_ff()根据期望角速率计算前馈量
 
     _motors.set_pitch(get_rate_pitch_pid().update_all(_ang_vel_body.y, gyro_latest.y,  _dt, _motors.limit.pitch, _pd_scale.y) + _actuator_sysid.y);
     _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
+    //  gcs().send_text(MAV_SEVERITY_CRITICAL,"_control_value_old.y:%f",_control_value_old.y);
 
     _motors.set_yaw(get_rate_yaw_pid().update_all(_ang_vel_body.z, gyro_latest.z,  _dt, _motors.limit.yaw, _pd_scale.z) + _actuator_sysid.z);
     _motors.set_yaw_ff(get_rate_yaw_pid().get_ff()*_feedforward_scalar);

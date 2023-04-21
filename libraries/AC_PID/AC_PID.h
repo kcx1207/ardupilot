@@ -15,6 +15,7 @@
 #define AC_PID_RESET_TC          0.16f   // Time constant for integrator reset decay to zero
 
 #include "AP_PIDInfo.h"
+#include <AP_HAL/AP_HAL.h>
 
 /// @class	AC_PID
 /// @brief	Copter PID control class
@@ -125,10 +126,9 @@ public:
     AP_Float _slew_rate_tau;
 
 //LADRC计算部分
-    void LESO(float w0, float b0, float u, float y, float& z1, float& z2, float& z3, float dt);
-
-    float LADRC_cal(float _ang_vel_body,float& _ang_vel_body_last ,float k1,float k2,float& z1, float& z2, float& z3, float b0, float dt,float w0,float u,float y);
-    
+float LADRC_cal(float _ang_vel_body,float& _ang_vel_body_last ,float& z1, float& z2, float& z3,float u,float y, float dt);
+Vector3f f(Vector3f x, float t, float u, float y);
+Vector3f runge_kutta4(Vector3f x,  float t , float u, float y, float dt);
 protected:
 
     // parameters
@@ -141,6 +141,12 @@ protected:
     AP_Float _filt_E_hz;         // PID error filter frequency in Hz
     AP_Float _filt_D_hz;         // PID derivative filter frequency in Hz
     AP_Float _slew_rate_max;
+
+    //新增LADRC变量
+    AP_Float _w0;
+    AP_Float _k1;
+    AP_Float _k2;
+    AP_Float _b0;
 
     SlewLimiter _slew_limiter{_slew_rate_max, _slew_rate_tau};
 
@@ -168,4 +174,11 @@ private:
     const float default_filt_E_hz;
     const float default_filt_D_hz;
     const float default_slew_rate_max;
+
+    const float default_w0  =1;
+    const float default_k1  =1;
+    const float default_k2  =1;
+    const float default_b0  =1;
+    
+    float t = AP_HAL::millis();
 };

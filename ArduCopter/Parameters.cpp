@@ -28,6 +28,7 @@
 #endif
 
 const AP_Param::Info Copter::var_info[] = {
+
     // @Param: FORMAT_VERSION
     // @DisplayName: Eeprom format version number
     // @Description: This value is incremented when changes are made to the eeprom format

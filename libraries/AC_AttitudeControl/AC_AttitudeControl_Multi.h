@@ -80,7 +80,12 @@ public:
 
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
-
+  float z1;
+  float z2;
+  float z3;
+  Vector3f _ang_vel_body_last;
+  Vector3f _control_value_new;
+  Vector3f _control_value_old;
 protected:
 
     // boost angle_p/pd each cycle on high throttle slew

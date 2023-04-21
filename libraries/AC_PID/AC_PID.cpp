@@ -5,6 +5,7 @@
 #include "AC_PID.h"
 
 const AP_Param::GroupInfo AC_PID::var_info[] = {
+    
     // @Param: P
     // @DisplayName: PID Proportional Gain
     // @Description: P Gain which produces an output value that is proportional to the current error value
@@ -66,6 +67,11 @@ const AP_Param::GroupInfo AC_PID::var_info[] = {
     // @Increment: 0.5
     // @User: Advanced
     AP_GROUPINFO_FLAGS_DEFAULT_POINTER("SMAX", 12, AC_PID, _slew_rate_max, default_slew_rate_max),
+
+    AP_GROUPINFO_FLAGS_DEFAULT_POINTER("w0", 13, AC_PID, _w0, default_w0),
+    AP_GROUPINFO_FLAGS_DEFAULT_POINTER("k1", 14, AC_PID, _k1, default_k1),
+    AP_GROUPINFO_FLAGS_DEFAULT_POINTER("k2", 15, AC_PID, _k2, default_k2),
+    AP_GROUPINFO_FLAGS_DEFAULT_POINTER("b0", 16, AC_PID, _b0, default_b0),    
 
     AP_GROUPEND
 };
@@ -178,22 +184,37 @@ float AC_PID::update_all(float target, float measurement, float dt, bool limit, 
     return P_out + _integrator + D_out;
 }
 
-//LADRC计算
-void AC_PID::LESO(float w0, float b0, float u, float y, float& z1, float& z2, float& z3, float dt) {
-float dz1=-3*w0*z1+z2+3*w0*y;
-float dz2=-3*z1*w0*w0+z3+b0*u+3*y*w0*w0;
-float dz3=-z1*w0*w0*w0+y*w0*w0*w0;
-z1 += dz1 * dt;
-z2 += dz2 * dt;
-z3 += dz3 * dt;
+//龙哥苦他函数实现
+Vector3f AC_PID::f(Vector3f x, float t1,float u, float y) {
+    Vector3f dxdt;
+    // 这里定义一个简单的向量值微分方程，即：
+    // x' = [y, z, -x + 2*y - 3*z, y', z', -x' + 2*y' - 3*z']
+    dxdt[0] = -3 * _w0 * x[0] + x[1] + 3* _w0* y;
+    dxdt[1] = -3 *_w0 *_w0 *x[0] + x[2]  + _b0 * u+3*y*_w0*_w0;
+    dxdt[2] = -x[0]*_w0*_w0*_w0+y*_w0*_w0*_w0;
+
+    return dxdt;
 }
 
-float AC_PID::LADRC_cal(float _ang_vel_body,float& _ang_vel_body_last ,float k1,float k2,float& z1, float& z2, float& z3, float b0, float dt,float w0,float u,float y){
-   AC_PID::LESO( w0,  b0, u, y, z1,  z2,  z3,  dt);
+Vector3f AC_PID::runge_kutta4(Vector3f x,float t1,float u, float y, float dt) {
+
+    Vector3f k1 =  f(x, t, u , y) * dt;
+    Vector3f k2 =  f(x + k1/2, t + dt/2, u ,y) * dt ;
+    Vector3f k3 = f(x + k2/2, t + dt/2, u,y) * dt;
+    Vector3f k4 = f(x + k3, t + dt,u ,y ) * dt;
+    Vector3f result = x + (k1 + k2 * 2+ k3 * 2 + k4) / 6;
+    return result;
+}
+
+//LADRC计算
+float AC_PID::LADRC_cal(float _ang_vel_body,float& _ang_vel_body_last ,float& z1, float& z2, float& z3,float u,float y, float dt){
+    Vector3f vec = {z1, z2, z3};
+
+   runge_kutta4(vec,  t , dt, u, y);
    float vel_diff = (_ang_vel_body - _ang_vel_body_last) / dt;
-   float control_value_new = k1 * (_ang_vel_body - z1) + k2 * (vel_diff - z2) - z3;
+   float control_value_new = _k1 * (_ang_vel_body - z1) +_k2 * (vel_diff - z2) - z3;
     _ang_vel_body_last=_ang_vel_body;
-    control_value_new=control_value_new/b0;
+    control_value_new=control_value_new/_b0;
     return control_value_new;
 }
 

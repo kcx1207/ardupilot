@@ -19,5 +19,6 @@ private:
     AP_Int8 _int8;
     AP_Int16 _int16;
     AP_Float _float;
-
+//新增参数
+    AP_Float _w0;
 };
