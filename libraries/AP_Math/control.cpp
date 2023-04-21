@@ -400,9 +400,9 @@ bool limit_accel_xy(const Vector2f& vel, Vector2f& accel, float accel_max)
 // sqrt_controller calculates the correction based on a proportional controller with piecewise sqrt sections to constrain second derivative.
 float sqrt_controller(float error, float p, float second_ord_lim, float dt)
 {
-    float correction_rate;
+    float correction_rate;//最后需要返回的期望速率
     if (is_negative(second_ord_lim) || is_zero(second_ord_lim)) {
-        // second order limit is zero or negative.
+        // second order limit is zero or negative.二阶限制是否为0或者负数，是的话说明开放控制器不起作用，直接采用比例控制
         correction_rate = error * p;
     } else if (is_zero(p)) {
         // P term is zero but we have a second order limit.
@@ -414,10 +414,10 @@ float sqrt_controller(float error, float p, float second_ord_lim, float dt)
             correction_rate = 0.0;
         }
     } else {
-        // Both the P and second order limit have been defined.
-        const float linear_dist = second_ord_lim / sq(p);
+        // Both the P and second order limit have been defined.同时定义了P和二阶限制
+        const float linear_dist = second_ord_lim / sq(p);//最大加速度除以p的平方
         if (error > linear_dist) {
-            correction_rate = safe_sqrt(2.0 * second_ord_lim * (error - (linear_dist / 2.0)));
+            correction_rate = safe_sqrt(2.0 * second_ord_lim * (error - (linear_dist / 2.0)));//带入高中加速度和位移的公式，初始速度假定为0，可以求出
         } else if (error < -linear_dist) {
             correction_rate = -safe_sqrt(2.0 * second_ord_lim * (-error - (linear_dist / 2.0)));
         } else {

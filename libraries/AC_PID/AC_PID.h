@@ -123,6 +123,11 @@ public:
     // single user of AC_PID by adding the parameter in the param
     // table of the parent class. It is made public for this reason
     AP_Float _slew_rate_tau;
+
+//LADRC计算部分
+    void LESO(float w0, float b0, float u, float y, float& z1, float& z2, float& z3, float dt);
+
+    float LADRC_cal(float _ang_vel_body,float& _ang_vel_body_last ,float k1,float k2,float& z1, float& z2, float& z3, float b0, float dt,float w0,float u,float y);
     
 protected:
 

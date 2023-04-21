@@ -726,7 +726,7 @@ const AP_Param::Info Copter::var_info[] = {
   2nd group of parameters
  */
 const AP_Param::GroupInfo ParametersG2::var_info[] = {
-
+    
     // @Param: WP_NAVALT_MIN
     // @DisplayName: Minimum navigation altitude
     // @Description: This is the altitude in meters above which for navigation can begin. This applies in auto takeoff and auto landing.

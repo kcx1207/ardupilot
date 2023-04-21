@@ -2,6 +2,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 
+
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // parameters from parent vehicle
@@ -363,17 +364,61 @@ void AC_AttitudeControl_Multi::update_throttle_rpy_mix()
 void AC_AttitudeControl_Multi::rate_controller_run()
 {
     // boost angle_p/pd each cycle on high throttle slew
+
     update_throttle_gain_boost();
 
     // move throttle vs attitude mixing towards desired (called from here because this is conveniently called on every iteration)
+    // 将油门与姿态混合移至所需位置（从此处调用，因为每次迭代都方便地调用它）
     update_throttle_rpy_mix();
 
     _ang_vel_body += _sysid_ang_vel_body;
 
-    Vector3f gyro_latest = _ahrs.get_gyro_latest();
+    Vector3f gyro_latest = _ahrs.get_gyro_latest();// 获取到最新的陀螺仪角速度参数
 
-    _motors.set_roll(get_rate_roll_pid().update_all(_ang_vel_body.x, gyro_latest.x,  _dt, _motors.limit.roll, _pd_scale.x) + _actuator_sysid.x);
-    _motors.set_roll_ff(get_rate_roll_pid().get_ff());
+	// get_rate_xxx_pid()返回该通道上的pid控制器对象
+	// update_all()：真正的PID控制器，根据输入的期望角速率和当前角速率进行PID运算
+	// 运算得到电机控制指令并通过set_xxx()函数赋值给这个通道上的电机
+
+    //这个函数分别对Roll、Pitch和Yaw三个通道进行PID运算。
+    //以Roll通道为例，get_rate_roll_pid()返回该通道的PID控制器，
+    //然后通过update_all()接收期望和测量角速度计算得到电机控制指令，然后通过set_roll()函数实现电机控制指令的设置。
+  
+    Vector3f control_value_new;
+    Vector3f control_value_old;
+    Vector3f _ang_vel_body_last;
+    float k1=5;float k2=0;float z1=0;float z2=0;float z3=0;float b0=1;float w0=15;
+    // LADRC_controller my_controller;
+    // control_value_new.x= my_controller.LADRC_cal( _ang_vel_body.x,_ang_vel_body_last.x , k1, k2,z1,  z2,  z3, 
+    // b0,  _dt, w0,control_value_old.x, gyro_latest.x); 
+    // _ang_vel_body_last.x=_ang_vel_body.x;
+  
+    // _motors.set_roll(control_value_new.x+ _actuator_sysid.x);
+    // _motors.set_roll_ff(get_rate_roll_pid().get_ff());
+
+    // control_value_new.y= LADRC_controller::LADRC_cal( _ang_vel_body.y,float& _ang_vel_body_last.y ,float k1,float k2,float& z1, float& z2, float& z3, 
+    // float b0, float dt,float w0,float control_value_old.y,float gyro_latest.y); 
+    // control_value_old.y= control_value_new.y;
+    // _motors.set_pitch(control_value_new.y+ _actuator_sysid.y);
+    // _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
+
+    // control_value_new.z= LADRC_controller::LADRC_cal( _ang_vel_body.z,float& _ang_vel_body_last.z ,float k1,float k2,float& z1, float& z2, float& z3, 
+    // float b0, float dt,float w0,float control_value_old.z,float gyro_latest.z); 
+    // control_value_old.z= control_value_new.z;
+    // _motors.set_yaw(control_value_new.z+ _actuator_sysid.z);
+    // _motors.set_yaw_ff(get_rate_yaw_pid().get_ff());
+
+    _motors.set_roll(get_rate_roll_pid().LADRC_cal(_ang_vel_body.x, _ang_vel_body_last.x , k1, k2, z1,  z2,  z3,  b0,  _dt, w0, control_value_old.x, gyro_latest.x));
+    _motors.set_roll_ff(get_rate_roll_pid().get_ff());// get_ff()根据期望角速率计算前馈量
+   control_value_old.x= control_value_new.x;
+
+    // _motors.set_pitch(get_rate_pitch_pid().LADRC_cal(_ang_vel_body.y, gyro_latest.y,  _dt, _motors.limit.pitch, _pd_scale.y) + _actuator_sysid.y);
+    // _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
+
+    // _motors.set_yaw(get_rate_yaw_pid().LADRC_cal(_ang_vel_body.z, gyro_latest.z,  _dt, _motors.limit.yaw, _pd_scale.z) + _actuator_sysid.z);
+    // _motors.set_yaw_ff(get_rate_yaw_pid().get_ff()*_feedforward_scalar);
+
+    //     _motors.set_roll(get_rate_roll_pid().update_all(_ang_vel_body.x, gyro_latest.x,  _dt, _motors.limit.roll, _pd_scale.x) + _actuator_sysid.x);
+    // _motors.set_roll_ff(get_rate_roll_pid().get_ff());// get_ff()根据期望角速率计算前馈量
 
     _motors.set_pitch(get_rate_pitch_pid().update_all(_ang_vel_body.y, gyro_latest.y,  _dt, _motors.limit.pitch, _pd_scale.y) + _actuator_sysid.y);
     _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
@@ -387,7 +432,7 @@ void AC_AttitudeControl_Multi::rate_controller_run()
     _pd_scale_used = _pd_scale;
     _pd_scale = VECTORF_111;
 
-    control_monitor_update();
+    control_monitor_update();//控制检测器更新
 }
 
 // sanity check parameters.  should be called once before takeoff

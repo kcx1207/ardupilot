@@ -9,7 +9,10 @@ const AP_Param::GroupInfo AC_PID::var_info[] = {
     // @DisplayName: PID Proportional Gain
     // @Description: P Gain which produces an output value that is proportional to the current error value
     AP_GROUPINFO_FLAGS_DEFAULT_POINTER("P", 0, AC_PID, _kp, default_kp),
-
+    //这段代码定义了一个名为"var_info"的常量数组，它是AC_PID类的静态成员。该数组存储了一个AP_Param::GroupInfo结构体对象，
+    //包含了一个PID控制器的比例增益参数P的相关信息，如参数名字、显示名称和描述等。
+    //其中AP_GROUPINFO_FLAGS_DEFAULT_POINTER是一个宏，用于指定参数默认值、标志和保存参数值的地址。
+    //具体来说，这行代码将参数名设置为"P"，默认值为0，保存在AC_PID类的_kp变量中，默认值为default_kp。
     // @Param: I
     // @DisplayName: PID Integral Gain
     // @Description: I Gain which produces an output that is proportional to both the magnitude and the duration of the error
@@ -173,6 +176,25 @@ float AC_PID::update_all(float target, float measurement, float dt, bool limit, 
     _pid_info.D = D_out;
 
     return P_out + _integrator + D_out;
+}
+
+//LADRC计算
+void AC_PID::LESO(float w0, float b0, float u, float y, float& z1, float& z2, float& z3, float dt) {
+float dz1=-3*w0*z1+z2+3*w0*y;
+float dz2=-3*z1*w0*w0+z3+b0*u+3*y*w0*w0;
+float dz3=-z1*w0*w0*w0+y*w0*w0*w0;
+z1 += dz1 * dt;
+z2 += dz2 * dt;
+z3 += dz3 * dt;
+}
+
+float AC_PID::LADRC_cal(float _ang_vel_body,float& _ang_vel_body_last ,float k1,float k2,float& z1, float& z2, float& z3, float b0, float dt,float w0,float u,float y){
+   AC_PID::LESO( w0,  b0, u, y, z1,  z2,  z3,  dt);
+   float vel_diff = (_ang_vel_body - _ang_vel_body_last) / dt;
+   float control_value_new = k1 * (_ang_vel_body - z1) + k2 * (vel_diff - z2) - z3;
+    _ang_vel_body_last=_ang_vel_body;
+    control_value_new=control_value_new/b0;
+    return control_value_new;
 }
 
 //  update_error - set error input to PID controller and calculate outputs
