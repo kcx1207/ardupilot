@@ -371,9 +371,11 @@ void AC_AttitudeControl_Multi::rate_controller_run()
 {
     // boost angle_p/pd each cycle on high throttle slew
 
+
     update_throttle_gain_boost();
 
     // move throttle vs attitude mixing towards desired (called from here because this is conveniently called on every iteration)
+    // 将油门与姿态混合移至所需位置（从此处调用，因为每次迭代都方便地调用它）
     // 将油门与姿态混合移至所需位置（从此处调用，因为每次迭代都方便地调用它）
     update_throttle_rpy_mix();
 
@@ -421,6 +423,7 @@ void AC_AttitudeControl_Multi::rate_controller_run()
     _pd_scale_used = _pd_scale;
     _pd_scale = VECTORF_111;
 
+    control_monitor_update();//控制检测器更新
     control_monitor_update();//控制检测器更新
 }
 

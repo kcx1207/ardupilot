@@ -14,6 +14,10 @@ const AP_Param::GroupInfo AC_PID::var_info[] = {
     //包含了一个PID控制器的比例增益参数P的相关信息，如参数名字、显示名称和描述等。
     //其中AP_GROUPINFO_FLAGS_DEFAULT_POINTER是一个宏，用于指定参数默认值、标志和保存参数值的地址。
     //具体来说，这行代码将参数名设置为"P"，默认值为0，保存在AC_PID类的_kp变量中，默认值为default_kp。
+    //这段代码定义了一个名为"var_info"的常量数组，它是AC_PID类的静态成员。该数组存储了一个AP_Param::GroupInfo结构体对象，
+    //包含了一个PID控制器的比例增益参数P的相关信息，如参数名字、显示名称和描述等。
+    //其中AP_GROUPINFO_FLAGS_DEFAULT_POINTER是一个宏，用于指定参数默认值、标志和保存参数值的地址。
+    //具体来说，这行代码将参数名设置为"P"，默认值为0，保存在AC_PID类的_kp变量中，默认值为default_kp。
     // @Param: I
     // @DisplayName: PID Integral Gain
     // @Description: I Gain which produces an output that is proportional to both the magnitude and the duration of the error
