@@ -397,25 +397,28 @@ void AC_AttitudeControl_Multi::rate_controller_run()
     _motors.set_roll( _control_value_new.x );
     _motors.set_roll_ff(get_rate_roll_pid().get_ff());// get_ff()根据期望角速率计算前馈量
      _control_value_old.x= _control_value_new.x;
-      _ang_vel_body_last = _ang_vel_body;
-    // Copter Copter;
-    // gcs().send_text(MAV_SEVERITY_CRITICAL,"_ang_vel_body_last.x:%f",_ang_vel_body_last.x);
-    // gcs().send_text(MAV_SEVERITY_CRITICAL,"_control_value_old.x:%f",_control_value_old.x);
-    // _motors.set_pitch(get_rate_pitch_pid().LADRC_cal(_ang_vel_body.y, gyro_latest.y,  _dt, _motors.limit.pitch, _pd_scale.y) + _actuator_sysid.y);
-    // _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
+     
 
-    // _motors.set_yaw(get_rate_yaw_pid().LADRC_cal(_ang_vel_body.z, gyro_latest.z,  _dt, _motors.limit.yaw, _pd_scale.z) + _actuator_sysid.z);
-    // _motors.set_yaw_ff(get_rate_yaw_pid().get_ff()*_feedforward_scalar);
+    _control_value_new.y = get_rate_pitch_pid().LADRC_cal(_ang_vel_body.y, _ang_vel_body_last.y , z1,  z2,  z3,_control_value_old.y, gyro_latest.y,_dt);
+    _motors.set_pitch( _control_value_new.y );
+    _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
+     _control_value_old.y= _control_value_new.y;
+    
+
+      _control_value_new.z = get_rate_yaw_pid().LADRC_cal(_ang_vel_body.z, _ang_vel_body_last.z, z1,  z2,  z3,_control_value_old.z, gyro_latest.z,_dt);
+    _motors.set_yaw( _control_value_new.z );
+    _motors.set_yaw_ff(get_rate_yaw_pid().get_ff()*_feedforward_scalar);
+     _control_value_old.z= _control_value_new.z;
+
 
     // _motors.set_roll(get_rate_roll_pid().update_all(_ang_vel_body.x, gyro_latest.x,  _dt, _motors.limit.roll, _pd_scale.x) + _actuator_sysid.x);
     // _motors.set_roll_ff(get_rate_roll_pid().get_ff());// get_ff()根据期望角速率计算前馈量
 
-    _motors.set_pitch(get_rate_pitch_pid().update_all(_ang_vel_body.y, gyro_latest.y,  _dt, _motors.limit.pitch, _pd_scale.y) + _actuator_sysid.y);
-    _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
-    //  gcs().send_text(MAV_SEVERITY_CRITICAL,"_control_value_old.y:%f",_control_value_old.y);
+    // _motors.set_pitch(get_rate_pitch_pid().update_all(_ang_vel_body.y, gyro_latest.y,  _dt, _motors.limit.pitch, _pd_scale.y) + _actuator_sysid.y);
+    // _motors.set_pitch_ff(get_rate_pitch_pid().get_ff());
 
-    _motors.set_yaw(get_rate_yaw_pid().update_all(_ang_vel_body.z, gyro_latest.z,  _dt, _motors.limit.yaw, _pd_scale.z) + _actuator_sysid.z);
-    _motors.set_yaw_ff(get_rate_yaw_pid().get_ff()*_feedforward_scalar);
+    //  _motors.set_yaw(get_rate_yaw_pid().update_all(_ang_vel_body.z, gyro_latest.z,  _dt, _motors.limit.yaw, _pd_scale.z) + _actuator_sysid.z);
+    // _motors.set_yaw_ff(get_rate_yaw_pid().get_ff()*_feedforward_scalar);
 
     _sysid_ang_vel_body.zero();
     _actuator_sysid.zero();

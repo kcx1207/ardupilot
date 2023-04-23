@@ -188,7 +188,7 @@ float AC_PID::update_all(float target, float measurement, float dt, bool limit, 
     return P_out + _integrator + D_out;
 }
 
-//龙哥苦他函数实现
+//微分方程计算函数实现
 Vector3f AC_PID::f(Vector3f x, float t1,float u, float y) {
     Vector3f dxdt;
     // 这里定义一个简单的向量值微分方程，即：
